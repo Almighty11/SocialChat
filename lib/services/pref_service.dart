@@ -7,6 +7,8 @@ import 'package:simplechat/models/story_model.dart';
 import 'package:simplechat/models/user_model.dart';
 import 'package:simplechat/utils/params.dart';
 
+import 'string_service.dart';
+
 class PreferenceService {
   static const keyEmail = 'email';
   static const keyPassword = 'password';
@@ -26,6 +28,8 @@ class PreferenceService {
   static const keyPostNotification = 'post_notification';
   static const keyJobNotification = 'job_notification';
 
+  static const keyUserLoginInfo = 'user_login_info';
+
   Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   Future<void> init() async {
@@ -35,6 +39,7 @@ class PreferenceService {
   }
 
   PreferenceService._();
+
   factory PreferenceService() => _instance;
 
   static final PreferenceService _instance = PreferenceService._();
@@ -135,6 +140,12 @@ class PreferenceService {
   Future<void> setJobNotification(bool flag) async {
     final SharedPreferences prefs = await _prefs;
     await prefs.setBool(keyJobNotification, flag);
+  }
+
+  Future<void> setUserLoginInfo(Map<String, dynamic> userInfo) async {
+    final SharedPreferences prefs = await _prefs;
+    await prefs.setString(
+        keyUserLoginInfo, StringService.encryptString(jsonEncode(userInfo)));
   }
 
   Future<String> getEmail() async {
@@ -248,5 +259,17 @@ class PreferenceService {
   Future<bool> checkKey(String key) async {
     final SharedPreferences prefs = await _prefs;
     return prefs.containsKey(key);
+  }
+
+  Future<Map<String, dynamic>> getUserLoginInfo() async {
+    final SharedPreferences prefs = await _prefs;
+    String encryptedLoginData = prefs.getString(keyUserLoginInfo) ?? '';
+    if (encryptedLoginData.isEmpty) {
+      return null;
+    }
+
+    print('${StringService.decryptString(encryptedLoginData)}');
+    return json
+        .decode(StringService.decryptString(encryptedLoginData).toString());
   }
 }

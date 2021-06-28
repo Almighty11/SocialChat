@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:simplechat/generated/l10n.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
-import 'package:simplechat/screens/auth/login_screen.dart';
-import 'package:simplechat/screens/auth/splash_screen.dart';
 import 'package:simplechat/services/inject_service.dart';
 import 'package:simplechat/services/socket_service.dart';
+import 'package:simplechat/utils/routes.dart';
+
+import 'utils/constants.dart';
 
 Injector injector;
 SocketService socketService;
@@ -41,9 +42,10 @@ class MyApp extends StatelessWidget {
           primaryTextTheme:
               TextTheme(headline6: TextStyle(color: Colors.green))),
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(
-        homeWidget: LoginScreen(),
-      ),
+      // home: SplashScreen(
+      //   homeWidget: LoginScreen(),
+      // ),
+      initialRoute: route_splash,
       localizationsDelegates: [
         S.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -51,6 +53,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: S.delegate.supportedLocales,
+      routes: Routes.getRoutes(),
     );
   }
 }

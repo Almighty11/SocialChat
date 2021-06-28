@@ -17,6 +17,9 @@ import 'package:simplechat/widgets/appbar_widget.dart';
 import 'package:simplechat/widgets/image_widget.dart';
 import 'package:simplechat/widgets/user_widget.dart';
 
+import '../../models/post_model.dart';
+import '../post/post_detail_screen.dart';
+
 class UserScreen extends StatefulWidget {
   final dynamic user;
 
@@ -60,6 +63,28 @@ class _UserScreenState extends State<UserScreen> {
       friendCount = resp['result']['friends'] as int;
       reviewCount = resp['result']['reviews'] as int;
       followCount = resp['result']['follows'] as int;
+      setState(() {});
+
+      _getData();
+    }
+  }
+
+  List<ExtraPostModel> posts = [];
+
+  void _getData() async {
+    var param = {
+      'userid': widget.user.id,
+      'limit': '20',
+    };
+    var resp = await NetworkService(context)
+        .ajax('chat_my_post', param, isProgress: true);
+    if (resp['ret'] == 10000) {
+      posts.clear();
+      for (var postJson in resp['result']) {
+        ExtraPostModel model = ExtraPostModel.fromMap(postJson);
+        posts.add(model);
+      }
+      posts.sort((b, a) => a.post.regdate.compareTo(b.post.regdate));
       setState(() {});
     }
   }
@@ -389,8 +414,28 @@ class _UserScreenState extends State<UserScreen> {
                     ),
                   ),
                 ),
-              SizedBox(
+              if (userStatus == 3) SizedBox(
                 height: offsetBase,
+              ),
+              GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: 2,
+                crossAxisSpacing: offsetXSm,
+                mainAxisSpacing: offsetXSm,
+                childAspectRatio: 4 / 5,
+                children:
+                List<Widget>.generate(posts.length, (index) {
+                  return posts[index].myItem(action: () {
+                    if (posts[index].list.isEmpty) {
+                      DialogService(context).showSnackbar('This is a text feed so that you can\'t see detail.',
+                          _scaffoldKey, type: SnackBarType.WARING);
+                      return;
+                    }
+                    NavigatorService(context).pushToWidget(
+                        screen:
+                        PostDetailScreen(post: posts[index]));
+                  });
+                }),
               ),
             ],
           ),
