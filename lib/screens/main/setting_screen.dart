@@ -354,7 +354,8 @@ class _SettingScreenState extends State<SettingScreen> {
     var resp = await NetworkService(context)
         .ajax('chat_logout', param, isProgress: true);
     if (resp['ret'] == 10000) {
-      NavigatorService(context).pushToWidget(screen: LoginScreen());
+      Navigator.of(context)
+          .pushReplacementNamed(route_login, arguments: 0);
     }
   }
 }

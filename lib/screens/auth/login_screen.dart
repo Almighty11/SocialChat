@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:jwt_decode/jwt_decode.dart';
-import 'package:package_info/package_info.dart';
 import 'package:simplechat/jsons/auth_json.dart';
 import 'package:simplechat/models/user_model.dart';
 import 'package:simplechat/screens/auth/forgot_screen.dart';
@@ -27,6 +26,8 @@ import 'package:simplechat/widgets/button_widget.dart';
 import 'package:simplechat/widgets/textfield_widget.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
+import '../../services/pref_service.dart';
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -43,13 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   var pref = PreferenceService();
 
-  PackageInfo _packageInfo = PackageInfo(
-    appName: 'Unknown',
-    packageName: 'Unknown',
-    version: 'Unknown',
-    buildNumber: 'Unknown',
-  );
-
   @override
   void initState() {
     super.initState();
@@ -62,41 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     initData();
-
-    Timer.run(() {
-      _getData();
-    });
-  }
-
-  void _getData() async {
-    await _initPackageInfo();
-    var resp = await NetworkService(context)
-        .ajax('chat_status', null, isProgress: true);
-    if (resp['ret'] == 10000) {
-      appSettingInfo['isNearby'] = resp['result']['nearby'] == '1';
-      appSettingInfo['isVideoStory'] = resp['result']['videostory'] == '1';
-      appSettingInfo['isReplyComment'] = resp['result']['replycomment'] == '1';
-      appSettingInfo['isVoiceCall'] = resp['result']['voicecall'] == '1';
-      appSettingInfo['isVideoCall'] = resp['result']['videocall'] == '1';
-      appSettingInfo['isAppVersion'] =
-          checkVersion(resp['result']['appversion'], _packageInfo);
-      appSettingInfo['contactEmail'] = resp['result']['email'];
-      appSettingInfo['contactPhone'] = resp['result']['phone'];
-      appSettingInfo['encrypt'] = resp['result']['encrypt'];
-
-      print('appSettingInfo ===> ${appSettingInfo.toString()}');
-      if (!appSettingInfo['isAppVersion']) {
-        NavigatorService(context)
-            .pushToWidget(screen: AppUpgradeScreen(), replace: true);
-      }
-    }
-  }
-
-  Future<void> _initPackageInfo() async {
-    final PackageInfo info = await PackageInfo.fromPlatform();
-    setState(() {
-      _packageInfo = info;
-    });
   }
 
   Future<void> initData() async {
@@ -347,11 +306,13 @@ class _LoginScreenState extends State<LoginScreen> {
         'email': email,
         'deviceid': payload['sub'] as String,
         'name': email.split('@').first,
+        'type': 'APPLE'
       };
       var resp = await NetworkService(context)
           .ajax('chat_apple_login', param, isProgress: true);
       if (resp['ret'] == 10000) {
         currentUser = UserModel.fromMap(resp['result']);
+        PreferenceService().setUserLoginInfo(param);
         NavigatorService(context).pushToWidget(
           screen: MainScreen(),
           replace: true,
@@ -377,11 +338,13 @@ class _LoginScreenState extends State<LoginScreen> {
       'deviceid': account.id,
       'name': account.displayName,
       'imgurl': account.photoUrl ?? 'imgurl',
+      'type': 'GOOGLE'
     };
     var resp = await NetworkService(context)
         .ajax('chat_google_login', param, isProgress: true);
     if (resp['ret'] == 10000) {
       currentUser = UserModel.fromMap(resp['result']);
+      PreferenceService().setUserLoginInfo(param);
       NavigatorService(context).pushToWidget(
         screen: MainScreen(),
         replace: true,
@@ -406,6 +369,7 @@ class _LoginScreenState extends State<LoginScreen> {
       'email': email,
       'deviceid': deviceID,
       'password': pass,
+      'type': 'NORMAL'
     };
     var resp = await NetworkService(context)
         .ajax('chat_login', param, isProgress: true);
@@ -418,10 +382,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       currentUser = UserModel.fromMap(resp['result']);
-      NavigatorService(context).pushToWidget(
-        screen: MainScreen(),
-        replace: true,
-      );
+      PreferenceService().setUserLoginInfo(param);
+
+      Navigator.of(context)
+          .pushReplacementNamed(route_main, arguments: 0);
     } else if (resp['ret'] == 10002) {
       if (isRemember) {
         pref.setEmail(email);
@@ -435,10 +399,8 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           pop: (value) {
             if (value != null) {
-              NavigatorService(context).pushToWidget(
-                screen: MainScreen(),
-                replace: true,
-              );
+              Navigator.of(context)
+                  .pushReplacementNamed(route_main, arguments: 0);
             }
           });
     } else {

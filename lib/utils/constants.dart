@@ -55,3 +55,7 @@ const String notSupport = 'This feature is not supported yet.';
 var storeUrl = Platform.isIOS
     ? 'https://apps.apple.com/us/app/simple-chat-2021/id1560156953'
     : 'https://play.google.com/store/apps/details?id=com.laodev.simplechat';
+
+const route_main = '/main';
+const route_login = '/login';
+const route_splash = '/lending';
